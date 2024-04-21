@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>
+        <relativePath/> <!-- lookup parent from repository -->
+    </parent>
+    <groupId>org.frappa</groupId>
+    <artifactId>leanquery</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>leanquery</name>
+    <description>Hope it works</description>
+    <properties>
+        <java.version>17</java.version>
+        <jooq.version>3.19.7</jooq.version>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-jooq</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq</artifactId>
+            <version>${jooq.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.1.0</version>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <files>
+                                <file>src/main/resources/application.properties</file>
+                            </files>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jooq</groupId>
+                <artifactId>jooq-codegen-maven</artifactId>
+                <version>${jooq.version}</version>
+                <executions>
+                    <execution>
+                        <id>generate-postgres</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <!-- JDBC connection parameters -->
+                            <jdbc>
+                                <driver>${datasource.driver}</driver>
+                                <url>${datasource.jdbcUrl}</url>
+                                <user>${datasource.username}</user>
+                                <password>${datasource.password}</password>
+                            </jdbc>
+                            <!-- Generator parameters -->
+                            <generator>
+                                <database>
+                                    <name>
+                                        org.jooq.meta.postgres.PostgresDatabase
+                                    </name>
+                                    <forcedTypes>
+                                        <forcedType>
+                                            <!-- Specify any data type that is supported in your database, or if unsupported,
+                                                 a type from org.jooq.impl.SQLDataType -->
+                                            <name>INTEGER</name>
+                                            <!-- A Java regex matching fully-qualified columns, attributes, parameters. Use the pipe to separate several expressions. -->
+                                            <includeExpression>.*\.*_ID</includeExpression>
+                                        </forcedType>
+                                        <forcedType>
+                                            <name>INSTANT</name>
+                                            <!-- Postgres type -->
+                                            <includeTypes>timestamp</includeTypes>
+                                        </forcedType>
+                                    </forcedTypes>
+                                    <includes>.*</includes>
+                                    <excludes/>
+                                    <inputSchema>public</inputSchema>
+
+                                </database>
+                                <!--                                <generate>-->
+                                <!--                                    <pojos>true</pojos>-->
+                                <!--                                    <pojosEqualsAndHashCode>true</pojosEqualsAndHashCode>-->
+                                <!--                                    <javaTimeTypes>true</javaTimeTypes>-->
+                                <!--                                    <fluentSetters>true</fluentSetters>-->
+                                <!--                                    &lt;!&ndash; Generate the DAO classes &ndash;&gt;-->
+                                <!--                                    <daos>true</daos>-->
+                                <!--                                    &lt;!&ndash; Annotate DAOs (and other types) with spring annotations, such as @Repository and @Autowired-->
+                                <!--                                         for auto-wiring the Configuration instance, e.g. from Spring Boot's jOOQ starter &ndash;&gt;-->
+                                <!--                                    <springAnnotations>true</springAnnotations>-->
+                                <!--                                    &lt;!&ndash; Generate Spring-specific DAOs containing @Transactional annotations &ndash;&gt;-->
+                                <!--                                    <springDao>true</springDao>-->
+                                <!--                                </generate>-->
+                                <target>
+                                    <packageName>org.frappa.leanquery.jooq</packageName>
+                                    <directory>target/generated-sources/jooq</directory>
+                                </target>
+                            </generator>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
