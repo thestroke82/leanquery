@@ -3,6 +3,7 @@ package org.frappa.leanquery.repository;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.frappa.leanquery.model.RentalR;
+import org.frappa.leanquery.model.mapper.FilmMapper;
 import org.frappa.leanquery.model.mapper.RentalMapper;
 import org.frappa.leanquery.plan.fetch.RentalFetchPlan;
 import org.frappa.leanquery.plan.fetch.RentalFetchPlanHandler;
@@ -27,6 +28,7 @@ public class RentalRepository implements PlanRepository<RentalR, RentalFilterPla
 
     private final DSLContext context;
     private final RentalMapper rentalMapper;
+    private final FilmMapper filmMapper;
     private final RentalFilterPlanHandler rentalFilterPlanHandler;
     private final RentalFetchPlanHandler rentalFetchPlanHandler;
 
@@ -38,7 +40,6 @@ public class RentalRepository implements PlanRepository<RentalR, RentalFilterPla
         Condition planCondition = this.rentalFilterPlanHandler.handle(filterPlan);
 
         // handle join fetches if any
-         // handle join fetches if any
         Pair<List<SelectField<?>>, Table<?>> join = this.rentalFetchPlanHandler.handleJoinFetches(selectFields, table, fetchPlan);
         selectFields = join.a;
         table = join.b;
@@ -64,6 +65,12 @@ public class RentalRepository implements PlanRepository<RentalR, RentalFilterPla
             RentalR rental = this.rentalMapper.mapRental(r);
             if(fetchPlan.isJoinStaff()){
                 rental.setStaff(this.rentalMapper.mapStaff(r));
+            }
+            if(fetchPlan.isJoinPayment()){
+                rental.setPayment(this.rentalMapper.mapPayment(r));
+            }
+            if(fetchPlan.isJoinFilm()){
+                rental.setFilm(this.filmMapper.mapFilm(r));
             }
             rentals.add(rental);
         });

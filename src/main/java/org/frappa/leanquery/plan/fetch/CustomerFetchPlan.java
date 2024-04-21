@@ -1,10 +1,9 @@
 package org.frappa.leanquery.plan.fetch;
 
-import org.frappa.leanquery.plan.fetch.base.Fetch;
 import org.frappa.leanquery.plan.fetch.base.FetchPlan;
 import org.frappa.leanquery.plan.fetch.base.FetchStrategy;
 
-public class CustomerFetchPlan extends FetchPlan {
+public class CustomerFetchPlan extends FetchPlan<CustomerFetchPlan.AllowedFetch> {
 
     private CustomerFetchPlan(){}
     public static CustomerFetchPlanBuilder builder(){
@@ -14,15 +13,29 @@ public class CustomerFetchPlan extends FetchPlan {
         private CustomerFetchPlan customerFetchPlan = new CustomerFetchPlan();
 
         public CustomerFetchPlanBuilder withRentals(){
-            customerFetchPlan.selectedFetches.put(Fetch.RENTAL, FetchStrategy.REPOSITORY);
+            customerFetchPlan.selectedFetches.put(AllowedFetch.RENTALS, FetchStrategy.REPOSITORY);
             return this;
         }
-        public CustomerFetchPlanBuilder withPayments(){
-            customerFetchPlan.selectedFetches.put(Fetch.PAYMENT, FetchStrategy.REPOSITORY);
+
+        public CustomerFetchPlanBuilder withRentalsStaff(){
+            customerFetchPlan.selectedFetches.put(AllowedFetch.RENTALS, FetchStrategy.REPOSITORY);
+            RentalFetchPlan nestedPlan = RentalFetchPlan.builder().withStaff().build();
+            customerFetchPlan.nestedFetchPlans.put(AllowedFetch.RENTALS, nestedPlan);
+            return this;
+        }
+        public CustomerFetchPlanBuilder withRentalsStaffAndPayment(){
+           customerFetchPlan.selectedFetches.put(AllowedFetch.RENTALS, FetchStrategy.REPOSITORY);
+            RentalFetchPlan nestedPlan = RentalFetchPlan.builder().withStaff().withPayment().build();
+            customerFetchPlan.nestedFetchPlans.put(AllowedFetch.RENTALS, nestedPlan);
             return this;
         }
         public CustomerFetchPlan build(){
             return customerFetchPlan;
         }
+
+
     }
+    public enum AllowedFetch{
+            RENTALS
+        }
 }

@@ -24,13 +24,12 @@ public class CustomerController {
 
     @GetMapping
     @LogExecutionPerformance
-    public List<CustomerR> findCustomers(
+    public List<CustomerR> find(
             CustomerQ query
     ) {
         CustomerFilterPlan filterPlan = this.customerMapper.mapCustomerFilterPlan(query);
         CustomerFetchPlan fetchPlan = CustomerFetchPlan.builder()
-                .withRentals()
-                .withPayments()
+                .withRentalsStaffAndPayment()
                 .build();
         return customerRepository.findByPlan(filterPlan, fetchPlan);
     }

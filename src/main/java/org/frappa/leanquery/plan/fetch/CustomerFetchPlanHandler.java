@@ -1,21 +1,17 @@
 package org.frappa.leanquery.plan.fetch;
 
-import jakarta.persistence.FetchType;
 import lombok.RequiredArgsConstructor;
 import org.antlr.v4.runtime.misc.Pair;
 import org.frappa.leanquery.model.CustomerR;
 import org.frappa.leanquery.model.RentalR;
 import org.frappa.leanquery.model.mapper.CustomerMapper;
-import org.frappa.leanquery.plan.fetch.base.Fetch;
 import org.frappa.leanquery.plan.fetch.base.FetchStrategy;
 import org.frappa.leanquery.plan.fetch.base.JoinFetchPlanHandler;
 import org.frappa.leanquery.plan.fetch.base.RepositoryFetchPlanHandler;
 import org.frappa.leanquery.plan.filter.RentalFilterPlan;
 import org.frappa.leanquery.repository.RentalRepository;
 import org.jooq.DSLContext;
-import org.jooq.Result;
 import org.jooq.SelectField;
-import org.jooq.SelectJoinStep;
 import org.jooq.Table;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
-import static org.frappa.leanquery.jooq.tables.Payment.PAYMENT;
 
 @Component
 @RequiredArgsConstructor
@@ -49,7 +43,7 @@ public class CustomerFetchPlanHandler implements JoinFetchPlanHandler<CustomerFe
         }
 
         // first, get all repository fetches from the plan
-        List<Fetch> repositoryFetches = customerFetchPlan.getSelectedFetches().entrySet().stream()
+        List<CustomerFetchPlan.AllowedFetch> repositoryFetches = customerFetchPlan.getSelectedFetches().entrySet().stream()
                 .filter(f->f.getValue().equals(FetchStrategy.REPOSITORY))
                 .map(f->f.getKey())
                 .collect(Collectors.toList());
@@ -64,10 +58,14 @@ public class CustomerFetchPlanHandler implements JoinFetchPlanHandler<CustomerFe
         // if the plan contains a fetch for rentals, fetch rentals using the respective repository
         // the query is executed in a single batch, meaning that we select all the rentals that have a customer_id
         // in the set of the root result and then we attach each rental to the right customer
-        if(customerFetchPlan.getSelectedFetches().containsKey(Fetch.RENTAL)){
-            RentalFetchPlan rentalFetchPlan = RentalFetchPlan.builder()
-                    .withStaff()
-                    .build();
+        if(customerFetchPlan.getSelectedFetches().containsKey(CustomerFetchPlan.AllowedFetch.RENTALS)){
+            RentalFetchPlan rentalFetchPlan = (RentalFetchPlan) customerFetchPlan.getNestedFetchPlans().get(CustomerFetchPlan.AllowedFetch.RENTALS);
+
+            // if no nested plan is provided, create a default one
+            if(rentalFetchPlan==null){
+                rentalFetchPlan = RentalFetchPlan.builder().build();
+            }
+
             RentalFilterPlan rentalFilterPlan = RentalFilterPlan.builder()
                     .customerIdIn(customersIndex.keySet())
                     .build();
@@ -78,20 +76,6 @@ public class CustomerFetchPlanHandler implements JoinFetchPlanHandler<CustomerFe
             });
         }
 
-        // if the plan contains a fetch for payments, fetch payments using the respective repository TODO
-        if(customerFetchPlan.getSelectedFetches().containsKey(Fetch.PAYMENT)){
-            Result<?> paymentsResult = context
-                .select(PAYMENT.PAYMENT_ID, PAYMENT.AMOUNT, PAYMENT.PAYMENT_DATE, PAYMENT.CUSTOMER_ID)
-                .from(PAYMENT)
-                .where(PAYMENT.CUSTOMER_ID.in(customersIndex.keySet()))
-                .orderBy(PAYMENT.PAYMENT_DATE.desc())
-                .fetch();
-            paymentsResult.forEach(p->{
-                CustomerR.Payment payment = this.customerMapper.mapPayment(p);
-                CustomerR customer = customersIndex.get(p.get(PAYMENT.CUSTOMER_ID));
-                customer.getPayments().add(payment);
-            });
-        }
 
         return rootEntities;
     }

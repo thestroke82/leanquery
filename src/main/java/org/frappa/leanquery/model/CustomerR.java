@@ -4,8 +4,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.math.BigDecimal;
-import java.time.Instant;
 import java.util.List;
 
 @Builder
@@ -17,15 +15,4 @@ public class CustomerR {
     private String lastName;
     private String email;
     private List<RentalR> rentals;
-    private List<Payment> payments;
-
-
-    @Builder
-    @Getter
-    @Setter
-    public static class Payment{
-        private Integer id;
-        private BigDecimal amount;
-        private Instant paymentDate;
-    }
 }

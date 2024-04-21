@@ -26,24 +26,10 @@ public class CustomerMapper {
                 .firstName(input.get(CUSTOMER.FIRST_NAME))
                 .lastName(input.get(CUSTOMER.LAST_NAME))
                 .email(input.get(CUSTOMER.EMAIL))
-                .payments(new ArrayList<>())
                 .rentals(new ArrayList<>())
                 .build();
         return output;
     }
-
-    public CustomerR.Payment mapPayment(Record input){
-        if(input==null){
-            return null;
-        }
-        CustomerR.Payment output= CustomerR.Payment.builder()
-                .id(input.get(PAYMENT.PAYMENT_ID))
-                .amount(input.get(PAYMENT.AMOUNT))
-                .paymentDate(input.get(PAYMENT.PAYMENT_DATE))
-                .build();
-        return output;
-    }
-
 
     public CustomerFilterPlan mapCustomerFilterPlan(CustomerQ input){
         if(input==null){

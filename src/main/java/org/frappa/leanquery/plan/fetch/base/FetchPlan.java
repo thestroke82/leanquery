@@ -5,7 +5,10 @@ import lombok.Getter;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class FetchPlan {
+public abstract class FetchPlan<T> {
     @Getter
-    protected Map<Fetch, FetchStrategy> selectedFetches = new HashMap<>();
+    protected Map<T, FetchStrategy> selectedFetches = new HashMap<>();
+    @Getter
+    protected Map<T, FetchPlan> nestedFetchPlans = new HashMap<>();
+
 }

@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 
 @Builder
@@ -15,17 +16,9 @@ public class RentalR {
     private Instant rentalDate;
     private Instant returnDate;
     private Staff staff;
-    private Film film;
+    private Payment payment;
+    private FilmR film;
 
-    @Builder
-    @Getter
-    @Setter
-    public static class Film{
-        private Integer id;
-        private String title;
-        private String description;
-        private Integer releaseYear;
-    }
 
     @Builder
     @Getter
@@ -34,5 +27,15 @@ public class RentalR {
         private Integer id;
         private String  firstName;
         private String  lastName;
+    }
+
+
+    @Builder
+    @Getter
+    @Setter
+    public static class Payment{
+        private Integer id;
+        private BigDecimal amount;
+        private Instant paymentDate;
     }
 }
