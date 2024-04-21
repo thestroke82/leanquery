@@ -1,4 +1,4 @@
-package org.frappa.leanquery.plan.filter;
+package org.frappa.leanquery.plan.filter.base;
 
 import org.jooq.Condition;
 

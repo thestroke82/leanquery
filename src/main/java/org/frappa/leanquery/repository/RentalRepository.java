@@ -1,16 +1,21 @@
 package org.frappa.leanquery.repository;
 
 import lombok.RequiredArgsConstructor;
+import org.antlr.v4.runtime.misc.Pair;
 import org.frappa.leanquery.model.RentalR;
 import org.frappa.leanquery.model.mapper.RentalMapper;
 import org.frappa.leanquery.plan.fetch.RentalFetchPlan;
 import org.frappa.leanquery.plan.fetch.RentalFetchPlanHandler;
 import org.frappa.leanquery.plan.filter.RentalFilterPlan;
 import org.frappa.leanquery.plan.filter.RentalFilterPlanHandler;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Result;
+import org.jooq.SelectField;
+import org.jooq.Table;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,19 +33,40 @@ public class RentalRepository implements PlanRepository<RentalR, RentalFilterPla
     @Override
     public List<RentalR> findByPlan(RentalFilterPlan filterPlan, RentalFetchPlan fetchPlan) {
 
-        // fetch the root
+        List<SelectField<?>> selectFields = List.of(RENTAL.RENTAL_ID, RENTAL.RENTAL_DATE, RENTAL.RETURN_DATE, RENTAL.CUSTOMER_ID);
+        Table<?> table = RENTAL;
+        Condition planCondition = this.rentalFilterPlanHandler.handle(filterPlan);
+
+        // handle join fetches if any
+         // handle join fetches if any
+        Pair<List<SelectField<?>>, Table<?>> join = this.rentalFetchPlanHandler.handleJoinFetches(selectFields, table, fetchPlan);
+        selectFields = join.a;
+        table = join.b;
+
+        // fetch the root (main query)
         Result<?> rawResult= context
-                .select(RENTAL.RENTAL_ID, RENTAL.RENTAL_DATE, RENTAL.RETURN_DATE, RENTAL.CUSTOMER_ID)
-                .from(RENTAL)
-                .where(this.rentalFilterPlanHandler.handle(filterPlan))
+                .select(selectFields)
+                .from(table)
+                .where(planCondition)
                 .orderBy(RENTAL.RENTAL_DATE.desc())
                 .fetch();
-        List<RentalR> rentals = rawResult.stream()
-                .map(this.rentalMapper::mapRental)
-                .collect(Collectors.toList());
+        List<RentalR> rentals = this.applyMapping(rawResult, fetchPlan);
 
-        this.rentalFetchPlanHandler.handle(rentals, fetchPlan);
+        // handle repository fetches if any
+        this.rentalFetchPlanHandler.handleRepositoryFetches(rentals, fetchPlan);
 
+        return rentals;
+    }
+
+    private List<RentalR> applyMapping(Result<?> rawResult, RentalFetchPlan fetchPlan){
+        List<RentalR> rentals = new ArrayList<>();
+        rawResult.forEach(r->{
+            RentalR rental = this.rentalMapper.mapRental(r);
+            if(fetchPlan.isJoinStaff()){
+                rental.setStaff(this.rentalMapper.mapStaff(r));
+            }
+            rentals.add(rental);
+        });
         return rentals;
     }
 }

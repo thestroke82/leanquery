@@ -1,7 +1,7 @@
 package org.frappa.leanquery.plan.filter;
 
 import lombok.RequiredArgsConstructor;
-import org.frappa.leanquery.plan.fetch.CustomerFetchPlan;
+import org.frappa.leanquery.plan.filter.base.FilterPlanHandler;
 import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;

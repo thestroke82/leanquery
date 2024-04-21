@@ -1,21 +1,26 @@
 package org.frappa.leanquery.repository;
 
 import lombok.RequiredArgsConstructor;
+import org.antlr.v4.runtime.misc.Pair;
 import org.frappa.leanquery.model.CustomerR;
 import org.frappa.leanquery.model.mapper.CustomerMapper;
 import org.frappa.leanquery.plan.fetch.CustomerFetchPlan;
 import org.frappa.leanquery.plan.fetch.CustomerFetchPlanHandler;
 import org.frappa.leanquery.plan.filter.CustomerFilterPlan;
 import org.frappa.leanquery.plan.filter.CustomerFilterPlanHandler;
-import org.frappa.leanquery.util.LogExecutionPerformance;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Result;
+import org.jooq.SelectField;
+import org.jooq.Table;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.frappa.leanquery.jooq.tables.Customer.CUSTOMER;
+import static org.frappa.leanquery.jooq.tables.Rental.RENTAL;
 
 @Repository
 @RequiredArgsConstructor
@@ -28,19 +33,26 @@ public class CustomerRepository implements PlanRepository<CustomerR, CustomerFil
 
     @Override
     public List<CustomerR> findByPlan(CustomerFilterPlan filterPlan, CustomerFetchPlan fetchPlan) {
+        List<SelectField<?>> selectFields = List.of(CUSTOMER.CUSTOMER_ID, CUSTOMER.FIRST_NAME, CUSTOMER.LAST_NAME, CUSTOMER.EMAIL);
+        Table<?> table = CUSTOMER;
+        Condition planCondition = this.customerFilterPlanHandler.handle(filterPlan);
 
-        // fetch the root
-        Result<?> customersResult= context
-                .select(CUSTOMER.CUSTOMER_ID, CUSTOMER.FIRST_NAME, CUSTOMER.LAST_NAME, CUSTOMER.EMAIL)
-                .from(CUSTOMER)
-                .where(this.customerFilterPlanHandler.handle(filterPlan))
+        // handle join fetches if any
+        Pair<List<SelectField<?>>, Table<?>> join = this.customerFetchPlanHandler.handleJoinFetches(selectFields, table, fetchPlan);
+        selectFields = join.a;
+        table = join.b;
+
+        // fetch the root (main query)
+        Result<?> rawResult= context
+                .select(selectFields)
+                .from(table)
+                .where(planCondition)
                 .orderBy(CUSTOMER.LAST_NAME.asc())
                 .fetch();
-        List<CustomerR> customers = customersResult.stream()
-                .map(this.customerMapper::mapCustomer)
-                .collect(Collectors.toList());
+        List<CustomerR> customers = this.applyMapping(rawResult, fetchPlan);
 
-        this.customerFetchPlanHandler.handle(customers, fetchPlan);
+        // handle repository fetches if any
+        this.customerFetchPlanHandler.handleRepositoryFetches(customers, fetchPlan);
 
 
         // fetch rental.films rental.1..1.film via inventory
@@ -58,6 +70,15 @@ public class CustomerRepository implements PlanRepository<CustomerR, CustomerFil
 //            rental.setFilm(film);
 //        });
 
+        return customers;
+    }
+
+    private List<CustomerR> applyMapping(Result<?> rawResult, CustomerFetchPlan fetchPlan){
+        List<CustomerR> customers = new ArrayList<>();
+        rawResult.forEach(r->{
+            CustomerR customer = this.customerMapper.mapCustomer(r);
+            customers.add(customer);
+        });
         return customers;
     }
 
